@@ -40,8 +40,10 @@ type TLSFlags struct {
 	KeepClientLogs bool `long:"keep-client-logs" description:"Include the client-side logs in the TLS handshake"`
 
 	Time string `long:"time" description:"Explicit request time to use, instead of clock. YYYYMMDDhhmmss format."`
+	ClientCertificate string `long:"cli-cert" description:"Set of certificates to use when verifying server certificates"`
+	ClientCertificateKey string `long:"cli-key" description:"Set of certificates to use when verifying server certificates"`
 	// TODO: directory? glob? How to map server name -> certificate?
-	Certificates string `long:"certificates" description:"Set of certificates to present to the server"`
+	Certificates string `long:"certificates" description:"Set of certificates to present to the serverdawwda"`
 	// TODO: re-evaluate this, or at least specify the file format
 	CertificateMap string `long:"certificate-map" description:"A file mapping server names to certificates"`
 	// TODO: directory? glob?
@@ -104,6 +106,13 @@ func (t *TLSFlags) GetTLSConfigForTarget(target *ScanTarget) (*tls.Config, error
 
 	ret := tls.Config{}
 
+	if t.ClientCertificate != "" && t.ClientCertificateKey != "" {
+		cert, err := tls.LoadX509KeyPair(t.ClientCertificate, t.ClientCertificateKey)
+		if err != nil {
+			log.Fatalf("Could no load client cert : %s", err)
+		}
+		ret.Certificates = []tls.Certificate{cert}
+	}
 	if t.Time != "" {
 		// TODO: Find standard time format
 		var baseTime time.Time
